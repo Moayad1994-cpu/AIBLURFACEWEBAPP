@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Moayad Dughmosh - AI TRAIN DETECT Face Blur</title>
+    <!-- Link the NEW CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_v_haar.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+</head>
+<body class="light-mode"> <!-- Start light -->
+
+    <div class="background-layer"></div> <!-- For gradient/image -->
+
+    <div class="container">
+        <header class="app-header">
+            <div class="logo-title">
+                <i class="fas fa-user-secret fa-2x"></i> <!-- Icon -->
+                <h1>AI MOAYAD DUGHMOSH <br><span>BLUR FACE VIDEO AND IMAGES (AI TRAINED DETECT FACE MOADEL)</span></h1>
+            </div>
+            <button id="theme-toggle-btn" title="Toggle Theme"><i class="fas fa-moon"></i></button>
+        </header>
+
+        <main>
+            <div class="processing-pipeline">
+                <!-- Step 1: Upload -->
+                <section id="upload-section" class="pipeline-step">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h2>Upload Media</h2>
+                    </div>
+                    <div id="drop-area">
+                        <form class="drop-form">
+                            <input type="file" id="fileElem" accept="image/*,video/*" title=" ">
+                            <label class="file-label" for="fileElem">
+                                <i class="fas fa-cloud-upload-alt fa-3x"></i>
+                                <p>Drag & Drop Image or Video Here</p>
+                                <p>or <span class="browse-btn">Browse Files</span></p>
+                            </label>
+                        </form>
+                    </div>
+                    <div id="file-name-display">No file selected</div>
+                </section>
+
+                <!-- Step 2: Preview -->
+                <section id="preview-section" class="pipeline-step" style="display: none;">
+                     <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h2>Preview Upload</h2>
+                     </div>
+                     <div id="preview-area">
+                         <p>Preview appears here.</p>
+                     </div>
+                </section>
+
+                <!-- Step 3: Controls -->
+                <section id="controls-section" class="pipeline-step">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h2>Adjust & Process</h2>
+                    </div>
+                     <div class="control-group">
+                        <label for="blur-slider"><i class="fas fa-sliders-h"></i> Blur Intensity:</label>
+                        <input type="range" id="blur-slider" min="0.05" max="1.0" step="0.05" value="0.4" title="Adjust Blur Strength"> <!-- Default slightly higher for Haar -->
+                        <span id="blur-value">0.40</span>
+                     </div>
+                    <button id="process-btn" class="action-button" disabled title="Process the uploaded file"><i class="fas fa-cogs"></i> Process File</button>
+                </section>
+
+                <!-- Step 4: Result -->
+                <section id="result-section" class="pipeline-step">
+                    <div class="step-header">
+                        <span class="step-number">4</span>
+                        <h2>Result</h2>
+                    </div>
+                    <div id="processing-indicator" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Processing, please wait...</p>
+                    </div>
+                    <div id="output-area">
+                        <p>Processed output will appear here.</p>
+                    </div>
+                    <div id="download-area" style="display: none;">
+                         <a href="#" id="download-link" class="action-button download-btn" download><i class="fas fa-download"></i> Download Result</a>
+                    </div>
+                </section>
+            </div> <!-- End processing-pipeline -->
+
+             <section id="about-section">
+                <h2>About Me</h2>
+                <p>Civil Engineer | AI Developer | AI Engineer | Computer Vision Development | GIS Engineer | Website Design | 3D Designer| THIS MODEL TRAIN BY ME</p>
+            </section>
+        </main>
+
+        <footer>
+            <p>Developed by 👷‍♂️👷‍♂️ AI MOAYAD DUGHMOSH © 2025</p>
+        </footer>
+    </div> <!-- End container -->
+    
+    <style>
+        /* style_v_haar.css - Modern UI for Haar Cascade App */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+:root { /* Color Variables (Light Mode) */ --bg-light: #eef2f7; --text-light: #2c3e50; --primary-light: #3498db; --primary-hover-light: #2980b9; --secondary-light: #e74c3c; --secondary-hover-light: #c0392b; --border-light: #dce4ec; --card-bg-light: #ffffff; --shadow-light: rgba(44, 62, 80, 0.1); --section-bg-light: #f8faff; --link-light: var(--primary-hover-light); --disabled-light: #bdc3c7; /* Color Variables (Dark Mode) */ --bg-dark: #1a1d24; --text-dark: #e1e4e8; --primary-dark: #5dade2; --primary-hover-dark: #85c1e9; --secondary-dark: #e74c3c; --secondary-hover-dark: #c0392b; --border-dark: #3a3d4a; --card-bg-dark: #282c37; --shadow-dark: rgba(0, 0, 0, 0.2); --section-bg-dark: #212530; --link-dark: var(--primary-hover-dark); --disabled-dark: #5f6368; /* Backgrounds */ --bg-gradient-light: linear-gradient(45deg, rgba(238, 242, 247, 0.1) 0%, rgba(214, 228, 245, 0.3) 100%); --bg-gradient-dark: linear-gradient(45deg, rgba(26, 29, 36, 0.2) 0%, rgba(40, 44, 55, 0.5) 100%); --bg-image-url: none; --bg-image-opacity: 0.05; /* Apply initial variables */ --bg-color: var(--bg-light); --text-color: var(--text-light); --primary-color: var(--primary-light); --primary-hover-color: var(--primary-hover-light); --secondary-color: var(--secondary-light); --secondary-hover-color: var(--secondary-hover-light); --border-color: var(--border-light); --card-bg-color: var(--card-bg-light); --shadow-color: var(--shadow-light); --section-bg-color: var(--section-bg-light); --link-color: var(--link-light); --disabled-color: var(--disabled-light); --bg-gradient: var(--bg-gradient-light); }
+body { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); transition: background-color 0.3s ease, color 0.3s ease; line-height: 1.7; position: relative; min-height: 100vh; overflow-x: hidden; font-weight: 300; }
+body.dark-mode { --bg-color: var(--bg-dark); --text-color: var(--text-dark); --primary-color: var(--primary-dark); --primary-hover-color: var(--primary-hover-dark); --secondary-color: var(--secondary-dark); --secondary-hover-color: var(--secondary-hover-dark); --border-color: var(--border-dark); --card-bg-color: var(--card-bg-dark); --shadow-color: var(--shadow-dark); --section-bg-color: var(--section-bg-dark); --link-color: var(--link-dark); --disabled-color: var(--disabled-dark); --bg-gradient: var(--bg-gradient-dark); }
+.background-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; background: var(--bg-gradient); transition: background 0.5s ease; }
+body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-image: var(--bg-image-url); background-size: cover; background-position: center; opacity: var(--bg-image-opacity); transition: opacity 0.5s ease; pointer-events: none; }
+.container { max-width: 960px; margin: 30px auto; padding: 30px 35px; background-color: var(--card-bg-color); border-radius: 15px; box-shadow: 0 10px 30px var(--shadow-color); transition: background-color 0.3s ease, box-shadow 0.3s ease; position: relative; z-index: 1; }
+.app-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 30px; transition: border-color 0.3s ease; }
+.logo-title { display: flex; align-items: center; }
+.logo-title i { color: var(--primary-color); margin-right: 15px; font-size: 2.2em; transition: color 0.3s ease; }
+.logo-title h1 { margin: 0; font-size: 1.6em; font-weight: 600; color: var(--text-color); line-height: 1.2; transition: color 0.3s ease; }
+.logo-title h1 span { display: block; font-size: 0.7em; font-weight: 400; color: #6c757d; }
+body.dark-mode .logo-title h1 span { color: #a0a0b0; }
+#theme-toggle-btn { background: none; border: 1px solid var(--border-color); color: var(--text-color); font-size: 1em; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+#theme-toggle-btn:hover { background-color: var(--primary-color); color: white; border-color: var(--primary-color); transform: rotate(15deg) scale(1.1); }
+.processing-pipeline { display: flex; flex-direction: column; gap: 25px; }
+.pipeline-step { background-color: var(--section-bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px 25px; transition: background-color 0.3s ease, border-color 0.3s ease; box-shadow: 0 3px 8px rgba(0,0,0,0.03); }
+body.dark-mode .pipeline-step { box-shadow: 0 3px 8px rgba(0,0,0,0.1); }
+.step-header { display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); transition: border-color 0.3s ease; }
+.step-number { background-color: var(--primary-color); color: white; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; font-size: 0.9em; flex-shrink: 0; }
+.step-header h2 { margin: 0; border-bottom: none; padding-bottom: 0; font-size: 1.3em; font-weight: 600; color: var(--text-color); transition: color 0.3s ease; }
+#drop-area { border: 2px dashed var(--border-color); border-radius: 8px; padding: 40px 25px; text-align: center; transition: border-color 0.3s ease, background-color 0.2s ease; cursor: pointer; background-color: var(--card-bg-color); }
+body.dark-mode #drop-area { background-color: var(--bg-dark); }
+#drop-area.highlight { border-color: var(--primary-color); border-style: solid; background-color: rgba(52, 152, 219, 0.05); }
+body.dark-mode #drop-area.highlight { background-color: rgba(93, 173, 226, 0.1); }
+#drop-area p { margin: 10px 0; font-size: 1.05em; }
+#drop-area .browse-btn { color: var(--primary-color); text-decoration: none; font-weight: 600; transition: color 0.2s ease;}
+#drop-area .browse-btn:hover { color: var(--primary-hover-color); }
+#drop-area i.fa-cloud-upload-alt { color: var(--primary-color); margin-bottom: 15px; transition: color 0.3s ease, transform 0.2s ease;}
+#drop-area:hover i.fa-cloud-upload-alt { transform: translateY(-5px); }
+#fileElem { display: none; }
+#file-name-display { margin-top: 15px; font-style: italic; color: #6c757d; font-size: 0.9em;}
+body.dark-mode #file-name-display { color: #a0a0b0; }
+#preview-section {}
+#preview-area { margin-top: 15px; min-height: 150px; text-align: center; border: 1px solid var(--border-color); background-color: var(--bg-color); padding: 15px; border-radius: 8px; transition: background-color 0.3s ease, border-color 0.3s ease; }
+#preview-area p { color: #6c757d; font-size: 0.95em; }
+body.dark-mode #preview-area p { color: #a0a0b0; }
+#preview-area img, #preview-area video { max-width: 100%; height: auto; max-height: 400px; display: block; margin: 10px auto; border-radius: 6px; box-shadow: 0 2px 5px var(--shadow-color); border: 1px solid var(--border-color); }
+.control-group { display: flex; align-items: center; margin-bottom: 20px; gap: 10px; }
+.control-group label { min-width: 90px; font-weight: 400; display: flex; align-items: center; gap: 5px;}
+#blur-slider { flex-grow: 1; cursor: pointer; accent-color: var(--primary-color); }
+#blur-value { font-weight: 600; min-width: 35px; text-align: right; background-color: var(--bg-color); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; border: 1px solid var(--border-color);}
+.action-button { background-color: var(--primary-color); color: white; border: none; padding: 12px 22px; font-size: 1em; font-weight: 600; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
+.action-button i { margin-right: 8px; }
+.action-button:hover { background-color: var(--primary-hover-color); box-shadow: 0 5px 10px rgba(0,0,0,0.15); }
+.action-button:active { transform: translateY(1px) scale(0.99); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.action-button:disabled { background-color: var(--disabled-color); cursor: not-allowed; opacity: 0.7; box-shadow: none;}
+#download-area { text-align: center; margin-top: 20px; }
+#processing-indicator { text-align: center; padding: 30px 20px; }
+.spinner { border: 5px solid var(--section-bg-color); border-top: 5px solid var(--primary-color); border-radius: 50%; width: 45px; height: 45px; animation: spin 1.2s linear infinite; margin: 0 auto 15px auto; }
+body.dark-mode .spinner { border-color: var(--card-bg-dark); border-top-color: var(--primary-dark); }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+#processing-indicator p { font-weight: 600; font-size: 1.1em; }
+#output-area { margin-top: 15px; text-align: center; min-height: 100px; }
+#output-area p { color: #6c757d; }
+body.dark-mode #output-area p { color: #a0a0b0; }
+#output-area img, #output-area video { max-width: 100%; height: auto; max-height: 500px; margin-top: 10px; border-radius: 5px; border: 1px solid var(--border-color); display: block; margin-left: auto; margin-right: auto; }
+#about-section { text-align: center;}
+#about-section p { font-size: 0.95em; color: var(--text-color); line-height: 1.8; opacity: 0.9; }
+footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color); font-size: 0.9em; color: #777; transition: border-color 0.3s ease, color 0.3s ease; }
+body.dark-mode footer { color: #999; }
+@media (max-width: 768px) { .container { margin: 15px; padding: 20px; } .app-header { flex-direction: column; align-items: flex-start; gap: 10px; } .logo-title h1 { font-size: 1.4em; } #theme-toggle-btn { align-self: flex-end; margin-top: -40px; } h2 { font-size: 1.2em; } .control-group { flex-direction: column; align-items: stretch; } .control-group label { margin-bottom: 8px; } #blur-slider { width: 100%; } #blur-value { margin-left: 0; margin-top: 5px; text-align: left; } #preview-area, #output-area video, #output-area img { max-height: 300px; } }
+@media (max-width: 480px) { .logo-title h1 { font-size: 1.2em; } .logo-title h1 span { font-size: 0.65em; } .logo-title i { font-size: 1.8em; margin-right: 10px;} .action-button { font-size: 0.95em; padding: 10px 18px;} h2 { margin-bottom: 15px; } main section { padding: 15px; } }
+    </style>
+
+    <script>
+        // script_v_haar.js (For OpenCV Haar Cascade App)
+document.addEventListener('DOMContentLoaded', () => {
+    // Get DOM Elements
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('fileElem');
+    const fileNameDisplay = document.getElementById('file-name-display');
+    const previewSection = document.getElementById('preview-section');
+    const previewArea = document.getElementById('preview-area');
+    const blurSlider = document.getElementById('blur-slider');
+    const blurValueDisplay = document.getElementById('blur-value');
+    const processBtn = document.getElementById('process-btn');
+    const processingIndicator = document.getElementById('processing-indicator');
+    const outputArea = document.getElementById('output-area');
+    const downloadArea = document.getElementById('download-area');
+    const downloadLink = document.getElementById('download-link');
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const body = document.body;
+
+    let currentMediaFile = null; // Holds the currently selected image/video file
+
+    // --- Theme Toggle ---
+    function applyTheme(theme) {
+        body.classList.remove('light-mode', 'dark-mode');
+        body.classList.add(theme);
+        themeToggleBtn.innerHTML = (theme === 'dark-mode') ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        localStorage.setItem('theme', theme);
+    }
+    const savedTheme = localStorage.getItem('theme') || 'light-mode'; // Default to light
+    applyTheme(savedTheme); // Apply saved or default theme on load
+
+    themeToggleBtn.addEventListener('click', () => {
+        const newTheme = body.classList.contains('dark-mode') ? 'light-mode' : 'dark-mode';
+        applyTheme(newTheme);
+    });
+
+    // --- Blur Slider ---
+    blurSlider.addEventListener('input', () => {
+        blurValueDisplay.textContent = parseFloat(blurSlider.value).toFixed(2);
+    });
+
+    // --- Drag and Drop ---
+    function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.add('highlight'), false);
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.remove('highlight'), false);
+    });
+    dropArea.addEventListener('drop', handleDrop, false);
+    fileInput.addEventListener('change', handleFileSelect, false);
+
+    function handleDrop(e) { const files = e.dataTransfer.files; if (files.length > 0) { handleMediaFile(files[0]); } }
+    function handleFileSelect(e) { if (e.target.files.length > 0) { handleMediaFile(e.target.files[0]); } }
+
+    function handleMediaFile(file) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov', 'video/mkv', 'video/wmv', 'video/flv'];
+        let isAllowed = allowedTypes.includes(file.type) || file.type.startsWith('image/') || file.type.startsWith('video/');
+
+        if (!isAllowed) {
+            alert(`Unsupported file type: ${file.type || 'unknown'}. Please upload common image or video formats.`);
+            resetMediaUploadState(); return;
+        }
+        const maxSizeMB = 100; // Client-side check limit (adjust if needed)
+        const maxSize = maxSizeMB * 1024 * 1024;
+        if (file.size > maxSize) { alert(`File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum size is ${maxSizeMB} MB.`); resetMediaUploadState(); return; }
+
+        currentMediaFile = file;
+        fileNameDisplay.textContent = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        displayPreview(file); // Show preview
+        // Clear previous result area
+        outputArea.innerHTML = '<p>Processed output will appear here.</p>';
+        downloadArea.style.display = 'none';
+        processingIndicator.style.display = 'none';
+        processBtn.disabled = false; // Enable process button
+    }
+
+    function displayPreview(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewArea.innerHTML = ''; // Clear previous preview
+            try {
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.alt = "Image Preview";
+                    previewArea.appendChild(img);
+                } else if (file.type.startsWith('video/')) {
+                    const video = document.createElement('video');
+                    video.src = e.target.result;
+                    video.controls = true; // Add controls for preview
+                    video.muted = true; // Mute preview by default
+                    previewArea.appendChild(video);
+                } else { // Fallback for unexpected types that passed initial check
+                     previewArea.innerHTML = `<p>Cannot preview this file type (${file.type}).</p>`;
+                }
+                 previewSection.style.display = 'block'; // Show the preview section
+            } catch (error) {
+                 console.error("Error creating preview element:", error);
+                 previewArea.innerHTML = '<p style="color: red;">Could not generate preview.</p>';
+                 previewSection.style.display = 'block';
+            }
+        }
+        reader.onerror = function(e) {
+            console.error("FileReader error:", e);
+            previewArea.innerHTML = '<p style="color: red;">Could not read file for preview.</p>';
+            previewSection.style.display = 'block';
+        }
+         if (file) {
+            reader.readAsDataURL(file); // Read file as Data URL for embedding
+         } else {
+             previewArea.innerHTML = '<p>No file to preview.</p>';
+              previewSection.style.display = 'block';
+         }
+    }
+
+     function resetMediaUploadState() {
+        currentMediaFile = null;
+        fileNameDisplay.textContent = 'No file selected';
+        fileInput.value = '';
+        previewArea.innerHTML = '<p>Upload a file to see a preview.</p>';
+        previewSection.style.display = 'none';
+        outputArea.innerHTML = '<p>Processed output will appear here.</p>';
+        downloadArea.style.display = 'none';
+        processBtn.disabled = true; // Disable process button when cleared
+    }
+
+     // Helper to enable/disable controls during processing
+     function setControlsState(disabled) {
+        // Disable/Enable file input and process button
+        if(fileInput) fileInput.disabled = disabled; // Check if element exists
+        if(processBtn) processBtn.disabled = disabled;
+        // Visually indicate disabled state on drop area
+        if(dropArea) {
+            dropArea.style.opacity = disabled ? '0.6' : '1';
+            dropArea.style.cursor = disabled ? 'not-allowed' : 'pointer';
+        }
+        // Also disable slider
+        if(blurSlider) blurSlider.disabled = disabled;
+     }
+
+
+    // --- Processing ---
+    processBtn.addEventListener('click', () => {
+        if (!currentMediaFile) { alert('Please select an image or video file first.'); return; }
+
+        processingIndicator.style.display = 'block'; // Show spinner
+        outputArea.innerHTML = ''; // Clear previous result output
+        downloadArea.style.display = 'none';
+        setControlsState(true); // Disable controls
+
+        const formData = new FormData();
+        formData.append('file', currentMediaFile);
+        formData.append('blurFactor', blurSlider.value);
+
+        fetch('/process', { method: 'POST', body: formData })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errData => { throw new Error(errData.error || `Server error: ${response.statusText}`); })
+                 .catch(() => { throw new Error(`Server error: ${response.statusText} (${response.status})`); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            processingIndicator.style.display = 'none';
+            if (data.success) {
+                displayResult(data.url, data.is_video);
+                downloadLink.href = data.url;
+                downloadLink.download = `blurred_haar_${currentMediaFile.name}`; // Suggest download name
+                downloadArea.style.display = 'block';
+                console.log(`Processing finished in ${data.processing_time} seconds.`);
+                setControlsState(false); // Re-enable controls
+                processBtn.disabled = false; // Explicitly re-enable process button
+            } else {
+                outputArea.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+                setControlsState(false); // Re-enable controls on error
+                // Keep processBtn disabled if the underlying media file might still be selected but processing failed
+                // If you want the user to re-upload, call resetMediaUploadState() here instead.
+                processBtn.disabled = !currentMediaFile;
+            }
+        })
+        .catch(error => {
+            console.error('Error processing file:', error);
+            processingIndicator.style.display = 'none';
+            setControlsState(false); // Re-enable controls on error
+            outputArea.innerHTML = `<p style="color: red;">An error occurred: ${error.message}. Check console.</p>`;
+            processBtn.disabled = true; // Keep process disabled on fetch/network error
+        });
+    });
+
+    function displayResult(url, isVideo) {
+        outputArea.innerHTML = ''; // Clear placeholder
+        if (isVideo) {
+            const video = document.createElement('video'); video.controls = true; video.style.maxWidth = '100%'; video.style.maxHeight = '500px';
+            const source = document.createElement('source'); source.src = url;
+            const extension = url.split('.').pop().toLowerCase(); source.type = (['mp4', 'webm', 'ogg'].includes(extension)) ? `video/${extension}` : 'video/mp4';
+            video.appendChild(source); outputArea.appendChild(video);
+        } else { const img = document.createElement('img'); img.src = url; img.alt = 'Processed Image'; outputArea.appendChild(img); }
+    }
+
+}); // End DOMContentLoaded
+    </script>
+
+    <!-- Link the NEW JS file -->
+    <script src="{{ url_for('static', filename='js/script_v_haar.js') }}"></script>
+</body>
+</html>
