@@ -3,7 +3,7 @@ import time
 import traceback
 import uuid
 import json  # For parsing manual regions
-from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, current_app
+from flask import Flask, request, render_template, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 import cv2
 import numpy as np
@@ -23,85 +23,50 @@ MAX_UPLOAD_MB = 100
 MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', MAX_UPLOAD_MB * 1024 * 1024))
 print(f"INFO: Maximum upload size set to: {MAX_CONTENT_LENGTH / (1024*1024):.0f} MB")
 
-HAAR_CASCADE_FILENAME = 'haarcascade_frontalface_default.xml'  # Must be in the same directory as app.py
-HAAR_SCALE_FACTOR = 1.1
-HAAR_MIN_NEIGHBORS = 5
 HAAR_MIN_SIZE = (30, 30)
 
 # --- Flask App Setup ---
 app = Flask(__name__)
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER_PATH
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'combined_blur_secret_standard_name_v3')  # Change this!
 
 # --- Global Variable for Haar Cascade Model ---
-haar_cascade = None
-
-# --- Helper Functions ---
-def allowed_file(filename, allowed_extensions):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
-
-def check_folder_permissions(folder_path):
-    if not os.path.exists(folder_path):
-        try:
-            os.makedirs(folder_path, exist_ok=True)
-            print(f"INFO: Created uploads directory: {folder_path}")
-        except OSError as e:
-            print(f"ERROR: Could not create uploads directory {folder_path}: {e}")
-            return False
-    dummy_file_path = os.path.join(folder_path, f"perm_test_{uuid.uuid4().hex}.tmp")
-    try:
-        with open(dummy_file_path, 'w') as f:
-            f.write('test')
-        os.remove(dummy_file_path)
-        print(f"INFO: Write permissions verified for folder: {folder_path}")
-        return True
-    except Exception as e:
-        print(f"ERROR: Cannot write to upload folder: {folder_path}\n       Reason: {e}\n       CHECK PERMISSIONS! !!!!!!!!!!!!!!!!")
-        return False
-
 def load_haar_cascade_on_startup(cascade_filename):
+    """Loads the Haar Cascade model when the app starts."""
     global haar_cascade
     cascade_path = os.path.join(BASE_DIR, cascade_filename)
     if not os.path.exists(cascade_path):
-        print(f"CRITICAL ERROR: Haar Cascade file '{cascade_filename}' not found at {cascade_path}")
-        return False
+        print(f"CRITICAL ERROR: Haar Cascade file '{cascade_filename}' not found at {cascade_path}"); return False
     try:
         haar_cascade = cv2.CascadeClassifier(cascade_path)
         if haar_cascade.empty():
-            print(f"ERROR: Failed to load Haar Cascade from {cascade_path}.")
-            haar_cascade = None
-            return False
+            print(f"ERROR: Failed to load Haar Cascade from {cascade_path}."); haar_cascade = None; return False
         print(f"INFO: Haar Cascade '{cascade_filename}' loaded successfully.")
         return True
     except Exception as e:
-        print(f"ERROR loading Haar Cascade: {e}")
-        traceback.print_exc()
-        haar_cascade = None
-        return False
+        print(f"ERROR loading Haar Cascade: {e}"); traceback.print_exc(); haar_cascade = None; return False
 
 def detect_faces_haar(frame):
+    """Detects faces using the globally loaded Haar Cascade."""
     global haar_cascade
-    if haar_cascade is None:
-        print("WARN: Haar Cascade not loaded, cannot auto-detect.")
-        return np.empty((0, 4))
+    if haar_cascade is None: print("WARN: Haar Cascade not loaded, cannot auto-detect."); return np.empty((0, 4))
     try:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.equalizeHist(gray)
         faces = haar_cascade.detectMultiScale(gray, scaleFactor=HAAR_SCALE_FACTOR, minNeighbors=HAAR_MIN_NEIGHBORS, minSize=HAAR_MIN_SIZE)
         return faces if isinstance(faces, np.ndarray) else np.empty((0, 4))
     except Exception as e:
-        print(f"ERROR during Haar Cascade detection: {e}")
-        traceback.print_exc()
-        return np.empty((0, 4))
+        print(f"ERROR during Haar Cascade detection: {e}"); traceback.print_exc(); return np.empty((0, 4))
 
 def blur_regions(frame, regions, blur_factor):
+    """Applies Gaussian blur to specified rectangular regions."""
     processed_frame = frame.copy()
     try:
         regions_array = np.array(regions).astype(int)
     except (ValueError, TypeError):
-        print("Warning: Could not convert regions to integer array.")
-        return processed_frame
+        print("Warning: Could not convert regions to integer array."); return processed_frame
     if not isinstance(regions_array, np.ndarray) or regions_array.ndim != 2 or regions_array.shape[1] < 4 or len(regions_array) == 0:
         return processed_frame
     print(f" INFO: Applying blur to {len(regions_array)} region(s).")
@@ -130,9 +95,9 @@ def blur_regions(frame, regions, blur_factor):
     return processed_frame
 
 def process_uploaded_image(input_path, output_path, blur_factor, manual_regions):
+    """Loads image, determines regions (manual or auto), blurs, saves."""
     print(f"--- Processing Image: {os.path.basename(input_path)} ---")
-    method_used = "Error"
-    regions_to_blur = []
+    method_used = "Error"; regions_to_blur = []
     try:
         img = cv2.imread(input_path)
         if img is None:
@@ -157,76 +122,45 @@ def process_uploaded_image(input_path, output_path, blur_factor, manual_regions)
         return True, len(regions_to_blur), method_used
     except Exception as e:
         print(f"ERROR processing image {input_path}: {e}")
-        traceback.print_exc()
+        traceback.print_except()
         return False, 0, "Error"
 
 def process_uploaded_video(input_path, output_path, blur_factor, manual_regions):
+    """Loads video, determines regions (manual or auto), blurs, saves."""
     print(f"--- Processing Video: {os.path.basename(input_path)} ---")
-    cap = None
-    out = None
-    regions_to_use = []
-    using_manual = False
-    total_detections_this_video = 0
-    method_used = "Error"
+    cap = None; out = None; regions_to_use = []; using_manual = False; total_detections_this_video = 0; method_used = "Error"
     if manual_regions:
-        print(f" INFO: Using {len(manual_regions)} manually drawn region(s) statically.")
-        using_manual = True
-        method_used = "Manual"
-        try:
-            regions_to_use = np.array(manual_regions).astype(int)
-        except:
-            print("Warning: Could not convert manual regions to array.")
-            regions_to_use = []
-    elif haar_cascade:
-        print(f" INFO: No manual regions, using automatic Haar detection per frame.")
-        method_used = "Automatic (Haar)"
-    else:
-        print(" INFO: No manual regions and Haar cascade not loaded.")
-        method_used = "None"
-        regions_to_use = []
+        print(f" INFO: Using {len(manual_regions)} manually drawn region(s) statically."); using_manual = True; method_used = "Manual"
+        try: regions_to_use = np.array(manual_regions).astype(int)
+        except: print("Warning: Could not convert manual regions to array."); regions_to_use = []
+    elif haar_cascade: print(f" INFO: No manual regions, using automatic Haar detection per frame."); method_used = "Automatic (Haar)"
+    else: print(" INFO: No manual regions and Haar cascade not loaded."); method_used = "None"; regions_to_use = []
     try:
         cap = cv2.VideoCapture(input_path)
-        if not cap.isOpened():
-            raise IOError(f"Cannot open video file: {input_path}")
-        frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        if not cap.isOpened(): raise IOError(f"Cannot open video file: {input_path}")
+        frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)); frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = cap.get(cv2.CAP_PROP_FPS)
-        if fps <= 0 or fps > 120:
-            print(f"Warning: Invalid FPS {fps} detected, setting to 30.")
-            fps = 30
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        print(f" INFO: Input video properties: {frame_width}x{frame_height} @ {fps:.2f} FPS")
+        if fps <= 0 or fps > 120: print(f"Warning: Invalid FPS {fps} detected, setting to 30."); fps = 30
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v'); print(f" INFO: Input video properties: {frame_width}x{frame_height} @ {fps:.2f} FPS")
         out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
-        if not out.isOpened():
-            raise IOError(f"Could not open VideoWriter for path: {output_path}")
-        frame_count = 0
-        start_time = time.time()
+        if not out.isOpened(): raise IOError(f"Could not open VideoWriter for path: {output_path}")
+        frame_count = 0; start_time = time.time()
         while True:
             ret, frame = cap.read()
-            if not ret:
-                break
-            frame_count += 1
-            processed_frame = frame
-            current_frame_regions = []
-            if using_manual:
-                current_frame_regions = regions_to_use
-            elif haar_cascade:
-                current_frame_regions = detect_faces_haar(frame)
-                total_detections_this_video += len(current_frame_regions)
-            if len(current_frame_regions) > 0:
-                processed_frame = blur_regions(frame, current_frame_regions, blur_factor)
+            if not ret: break
+            frame_count += 1; processed_frame = frame; current_frame_regions = []
+            if using_manual: current_frame_regions = regions_to_use
+            elif haar_cascade: current_frame_regions = detect_faces_haar(frame); total_detections_this_video += len(current_frame_regions)
+            if len(current_frame_regions) > 0: processed_frame = blur_regions(frame, current_frame_regions, blur_factor)
             out.write(processed_frame)
             if frame_count % 60 == 0:
-                elapsed = time.time() - start_time
-                current_fps = frame_count / elapsed if elapsed > 0 else 0
+                elapsed = time.time() - start_time; current_fps = frame_count / elapsed if elapsed > 0 else 0
                 print(f"  INFO: Processed frame {frame_count}... ({current_fps:.1f} FPS)")
         end_time = time.time()
         print(f"INFO: Finished processing video. Total frames: {frame_count}")
         num_regions_processed = len(regions_to_use) if using_manual else total_detections_this_video
-        if not using_manual and haar_cascade:
-            print(f"INFO: Total automatic face detections: {total_detections_this_video}")
-        elif using_manual:
-            print(f"INFO: Applied {len(regions_to_use)} manual region(s) to all frames.")
+        if not using_manual and haar_cascade: print(f"INFO: Total automatic face detections: {total_detections_this_video}")
+        elif using_manual: print(f"INFO: Applied {len(regions_to_use)} manual region(s) to all frames.")
         print(f"INFO: Output video saved to: {output_path}")
         print(f"INFO: Processing time: {end_time - start_time:.2f} seconds")
         return True, num_regions_processed, method_used
@@ -272,7 +206,7 @@ def process_file():
         return jsonify({"success": False, "error": "No file selected."}), 400
 
     filename = secure_filename(file.filename)
-    file_ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    file_ext = filename.rsplit('.', 1)[1].lower()
     is_image = file_ext in ALLOWED_EXTENSIONS_IMG
     is_video = file_ext in ALLOWED_EXTENSIONS_VID
     if not is_image and not is_video:
@@ -297,22 +231,17 @@ def process_file():
         if isinstance(parsed_regions, list) and len(parsed_regions) > 0:
             regions_were_provided = True
             for region in parsed_regions:  # Basic validation
-                if isinstance(region, (list, tuple)) and len(region) == 4:
-                    manual_regions.append(list(map(int, region[:4])))
+                if isinstance(region, (list, tuple)) and len(region) == 4: manual_regions.append(list(map(int, region[:4])))
             print(f"INFO: Received {len(manual_regions)} valid manual blur regions.")
-        elif isinstance(parsed_regions, list) and len(parsed_regions) == 0:
-            print("INFO: Received empty list for manual regions.")
-        else:
-            print(f"WARN: Invalid format received for manualRegions: type {type(parsed_regions)}")
-    except json.JSONDecodeError:
-        print(f"WARN: Could not decode manualRegions JSON: '{manual_regions_json}'")
-    except Exception as e:
-        print(f"WARN: Error processing manualRegions: {e}")
+        elif isinstance(parsed_regions, list) and len(parsed_regions) == 0: print("INFO: Received empty list for manual regions.")
+        else: print(f"WARN: Invalid format received for manualRegions: type {type(parsed_regions)}")
+    except json.JSONDecodeError: print(f"WARN: Could not decode manualRegions JSON: '{manual_regions_json}'")
+    except Exception as e: print(f"WARN: Error processing manualRegions: {e}")
 
     # --- Pre-processing Check ---
     if not regions_were_provided and haar_cascade is None:
         print("ERROR: No manual regions provided and Haar cascade is not loaded.")
-        return jsonify({"success": False, "error": "Cannot process: No manual regions drawn and face detector is unavailable."}), 400  # Bad Request
+        return jsonify({"success": False, "error": "Cannot process: No manual regions drawn and face detector is unavailable."}), 400
 
     # --- File Handling & Processing ---
     try:
@@ -323,47 +252,48 @@ def process_file():
 
     unique_id = uuid.uuid4().hex
     input_filename = f"{unique_id}_input.{file_ext}"
-    output_ext = 'mp4' if is_video else file_ext
-    output_filename = f"{unique_id}_blurred.{output_ext}"
+    output_filename = f"{unique_id}_blurred.{file_ext}"
     input_path = os.path.join(current_app.config['UPLOAD_FOLDER'], input_filename)
     output_path = os.path.join(current_app.config['UPLOAD_FOLDER'], output_filename)
-    success = False
-    num_regions_processed = 0
-    method_used = "Error"
+    success = False; num_regions_processed = 0; method_used = "Error"
 
     try:
         file.save(input_path)
         print(f"INFO: Uploaded media saved to: {input_path}")
-        start_time = time.time()
         if is_image:
             success, num_regions_processed, method_used = process_uploaded_image(input_path, output_path, blur_factor, manual_regions)
         elif is_video:
             success, num_regions_processed, method_used = process_uploaded_video(input_path, output_path, blur_factor, manual_regions)
-        end_time = time.time()
-
-        if success:
-            print("SUCCESS: Processing complete.")
-            return jsonify({"success": True, "filename": output_filename,
-                            "url": url_for('uploaded_file', filename=output_filename),
-                            "is_video": is_video, "processing_time": f"{end_time - start_time:.2f}",
-                            "regions_processed": num_regions_processed, "method_used": method_used}), 200
         else:
-            print("ERROR: Processing function returned failure.")
-            return jsonify({"success": False, "error": "Processing failed internally. See server logs."}), 500
-
+            print("ERROR: Invalid file type.")
+            return jsonify({"success": False, "error": f"Invalid file type '{file_ext}'."}), 415
     except Exception as e:
-        print(f"ERROR: Exception during file processing route: {e}")
+        print(f"ERROR processing file: {e}")
         traceback.print_exc()
-        return jsonify({"success": False, "error": f"Internal server error: {e}"}), 500
-    finally:
-        # Always try to remove the original input file after processing attempt
-        if os.path.exists(input_path):
-            try:
-                os.remove(input_path)
-                print(f"INFO: Removed input file: {input_path}")
-            except Exception as e_rem:
-                print(f"WARNING: Could not remove input file {input_path}: {e_rem}")
+        return jsonify({"success": False, "error": "Internal server error."}), 500
 
+    if success:
+        print(f"INFO: Processed file saved to: {output_path}")
+        return jsonify({"success": True, "filename": output_filename, "regions_processed": num_regions_processed, "method_used": method_used}), 200
+    else:
+        print("ERROR: Processing failed.")
+        return jsonify({"success": False, "error": "Processing failed."}), 500
+
+# --- Flask Routes ---
+@app.route('/', methods=['GET'])
+def index():
+    """Renders the main HTML page."""
+    print(f"INFO: Request for '/'. Attempting to render 'index.html'.")
+    print(f"DEBUG: Flask app root path: {app.root_path}")
+    print(f"DEBUG: Flask template folder path: {app.template_folder}")
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        print(f"CRITICAL ERROR rendering template 'index.html': {e}")
+        traceback.print_exc()
+        return f"Internal Server Error: Could not render template 'index.html'. Check logs.", 500
+
+# --- Flask Routes ---
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     """Serves processed files from the upload directory."""
@@ -385,17 +315,7 @@ def uploaded_file(filename):
 
 # --- Main Execution ---
 if __name__ == '__main__':
-    print("Starting Flask Face Blur Application (Manual Draw + Haar Fallback)...")
-    os.makedirs(UPLOAD_FOLDER_PATH, exist_ok=True)
-    print(f"INFO: Upload folder ensured at: {UPLOAD_FOLDER_PATH}")
-    if not check_folder_permissions(UPLOAD_FOLDER_PATH):
-        print("\n!!! CRITICAL ERROR: Cannot write to upload folder. Uploads/Processing will fail. !!!\n")
-    model_loaded = load_haar_cascade_on_startup(HAAR_CASCADE_FILENAME)
-    if not model_loaded:
+    print("Starting Flask Face Blur Application (Manual Draw + Haar Fallback)")
+    if not load_haar_cascade_on_startup(HAAR_CASCADE_FILENAME):
         print("\n!!! WARNING: Haar Cascade model failed to load. Automatic detection fallback disabled. !!!\n")
-    # Recommended for Render: Use Waitress as the WSGI server
-    # from waitress import serve
-    # print("INFO: Starting server with Waitress...")
-    # serve(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-    # For local development, app.run is fine:
     app.run(debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true', host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
